@@ -378,128 +378,140 @@ class Model(CommandMixin, ListsMixin):
         return self._filepath.parent
 
     # Active Constants properties
-    def _get_actcsys(self):
+    @property
+    def ACTCSYS(self):
         """Active coordinate system"""
         return self._ACTCSYS
 
-    def _set_actcsys(self, value):
+    @ACTCSYS.setter
+    def ACTCSYS(self, value):
         self._ACTCSYS = int(value)
 
-    def _get_actn(self):
+    @property
+    def ACTN(self):
         """Active reference node"""
         return self._ACTN
 
-    def _set_actn(self, value):
+    @ACTN.setter
+    def ACTN(self, value):
         self._ACTN = int(value)
         self._ACTN1 = self._ACTN
 
-    def _get_actn1(self):
+    @property
+    def ACTN1(self):
         """
         N2 node of last element or last node defined, used for element defaults
         """
         return self._ACTN1
 
-    def _get_actn3(self):
+    @property
+    def ACTN3(self):
         """Active third node for local element rotation definition"""
         return self._ACTN3
 
-    def _set_actn3(self, value):
+    @ACTN3.setter
+    def ACTN3(self, value):
         self._ACTN3 = int(value)
 
-    def _get_actrot(self):
+    @property
+    def ACTROT(self):
         """Active local element rotation angle"""
         return self._ACTROT
 
-    def _set_actrot(self, value):
+    @ACTROT.setter
+    def ACTROT(self, value):
         self._ACTROT = int(value)
 
-    def _get_actgeom(self):
+    @property
+    def ACTGEOM(self):
         """Active geometrical property table code"""
         return self._ACTGEOM
 
-    def _set_actgeom(self, value):
+    @ACTGEOM.setter
+    def ACTGEOM(self, value):
         self._ACTGEOM = int(value)
 
-    def _get_actmat(self):
+    @property
+    def ACTMAT(self):
         """Active material Property table code"""
         return self._ACTMAT
 
-    def _set_actmat(self, value):
+    @ACTMAT.setter
+    def ACTMAT(self, value):
         self._ACTMAT = int(value)
 
-    def _get_actrelz(self):
+    @property
+    def ACTRELZ(self):
         """Active hinge Definition - local z-axis"""
         return self._ACTRELZ
 
-    def _set_actrelz(self, value):
+    @ACTRELZ.setter
+    def ACTRELZ(self, value):
         self._ACTRELZ = int(value)
 
-    def _get_actrely(self):
+    @property
+    def ACTRELY(self):
         """Active hinge Definition - local y-axis"""
         return self._ACTRELY
 
-    def _set_actrely(self, value):
+    @ACTRELY.setter
+    def ACTRELY(self, value):
         self._ACTRELY = int(value)
 
-    def _get_acttype(self):
+    @property
+    def ACTTYPE(self):
         """Active element type"""
         return self._ACTTYPE
 
-    def _set_acttype(self, value):
+    @ACTTYPE.setter
+    def ACTTYPE(self, value):
         self._ACTTYPE = int(value)
 
-    def _get_actcon(self):
+    @property
+    def ACTCON(self):
         """Active element CO constant"""
         return self._ACTCON
 
-    def _set_actcon(self, value):
+    @ACTCON.setter
+    def ACTCON(self, value):
         self._ACTCON = int(value)
 
-    def _get_actspconst(self):
+    @property
+    def ACTSPCONST(self):
         """Active spring/couple constant"""
         return self._ACTSPCONST
 
-    def _set_actspconst(self, value):
+    @ACTSPCONST.setter
+    def ACTSPCONST(self, value):
         self._ACTSPCONST = int(value)
 
-    ACTCSYS = property(_get_actcsys, _set_actcsys)
-    ACTN = property(_get_actn, _set_actn)
-    ACTN1 = property(_get_actn1)
-    ACTN3 = property(_get_actn3, _set_actn3)
-    ACTROT = property(_get_actrot, _set_actrot)
-    ACTGEOM = property(_get_actgeom, _set_actgeom)
-    ACTMAT = property(_get_actmat, _set_actmat)
-    ACTRELZ = property(_get_actrelz, _set_actrelz)
-    ACTRELY = property(_get_actrely, _set_actrely)
-    ACTTYPE = property(_get_acttype, _set_acttype)
-    ACTCON = property(_get_actcon, _set_actcon)
-    ACTSPCONST = property(_get_actspconst, _set_actspconst)
-
     # Groups
-    def _get_egroup(self):
+    @property
+    def EGROUP(self):
         """Current group to which elements will be assigned"""
         return self._EGROUP
 
-    def _set_egroup(self, value):
+    @EGROUP.setter
+    def EGROUP(self, value):
         self._EGROUP = int(value)
 
-    def _get_grpset(self):
+    @property
+    def GRPSET(self):
         """Current group set"""
         return self._GRPSET
 
-    def _set_grpset(self, value):
+    @GRPSET.setter
+    def GRPSET(self, value):
         self._GRPSET = int(value)
 
-    def _get_ngroup(self):
+    @property
+    def NGROUP(self):
         """Current group to which nodes will be assigned"""
         return self._NGROUP
 
-    def _set_ngroup(self, value):
+    @NGROUP.setter
+    def NGROUP(self, value):
         self._NGROUP = int(value)
-
-    EGROUP = property(_get_egroup, _set_egroup)
-    GRPSET = property(_get_grpset, _set_grpset)
-    NGROUP = property(_get_ngroup, _set_ngroup)
 
     # Max defined elements
     @property
@@ -574,19 +586,6 @@ class Model(CommandMixin, ListsMixin):
     def ICMAX(self, value):
         self._ic_list.pkmax = int(value)
 
-
-
-
-
-    # SCMAX = property(_get_scmax)
-    # MATMAX = property(_get_matmax)
-    # CTYPEMAX = property(_get_ctypemax)
-    # ICMAX = property(_get_icmax)
-    # RCMAX = property(_get_rcmax)
-    # RESTMAX = property(_get_restmax)
-    # PPARAMMAX = property(_get_pparammax)
-    # EOFMAX = property(_get_eofmax)
-
     # Last defined elements
     @property
     def LASTNODE(self):
@@ -612,61 +611,3 @@ class Model(CommandMixin, ListsMixin):
     def ACTLCASE(self, value):
         self._ACTLCASE = int(value)
 
-
-
-
-
-
-    # Properties as pandas DataFrames
-    # def _get_dataframe(self, entity_type):
-    #     # return pd.DataFrame([[getattr(x, p) for p in entity_type.get_parameters()]
-    #     #                      for x in getattr(self, entity_type.get_list_name())],
-    #     #                     columns=entity_type.get_parameters()).set_index(entity_type.get_parameters()[0])
-    #     return pd.DataFrame([[getattr(x, p) for p in entity_type.parameters]
-    #                          for x in getattr(self, entity_type._list_name)],
-    #                         columns=entity_type.parameters).set_index(entity_type.parameters[0])
-
-    # dfCSystems = property(_get_dfcsystems)
-    # def df_nodes(self):
-    #     """Get the nodes as a Pandas DataFrame"""
-    #     return self._get_dataframe(Node)
-    #
-    # def df_elements(self):
-    #     """Get the elements as a Pandas DataFrame"""
-    #     return self._get_dataframe(Element)
-    #
-    # def df_offsets(self):
-    #     """Get the element offsets as a Pandas DataFrame"""
-    #     return self._get_dataframe(ElemOffset)
-    #
-    # def df_pparams(self):
-    #     """Get the pipework coefficient parameters as a Pandas DataFrame"""
-    #     return self._get_dataframe(PParam)
-    #
-    # def df_couples(self):
-    #     """Get the couple elements as a Pandas DataFrame"""
-    #     return self._get_dataframe(Couple)
-    #
-    # def df_geometries(self):
-    #     """Get the geometries as a Pandas DataFrame"""
-    #     return self._get_dataframe(Geometry)
-    #
-    # def df_materials(self):
-    #     """Get the materials as a Pandas DataFrame"""
-    #     return self._get_dataframe(Material)
-    #
-    # def df_ctypes(self):
-    #     """Get the couple types as a Pandas DataFrame"""
-    #     return  self._get_dataframe(CType)
-    #
-    # def df_ics(self):
-    #     """Get the integer constant tables as a Pandas DataFrame"""
-    #     return self._get_dataframe(IC)
-    #
-    # def df_rcs(self):
-    #     """Get the real constant tables as a Pandas DataFrame"""
-    #     return self._get_dataframe(RC)
-    #
-    # def df_rests(self):
-    #     """Get the restraints as a Pandas DataFrame"""
-    #     return self._get_dataframe(Rest)
