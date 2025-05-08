@@ -350,7 +350,7 @@ class CommandCSYS(Command):
         no = int_or_default(args[0], None)
         cstype = int_or_default(args[1], CSys.paramdefaults[1])
         n3 = int_or_default(args[10], CSys.paramdefaults[10])
-        ti = [type_or_default(args[i], int if n3 == -1 else float, CSys.paramdefaults[i]) for i in [1, 2, 3]]
+        ti = [type_or_default(args[i], int if n3 == -1 else float, CSys.paramdefaults[i]) for i in [2, 3, 4]]
         ri = [float_or_default(args[i], CSys.paramdefaults[i]) for i in [5, 6, 7]]
         pi = [float_or_default(args[i], CSys.paramdefaults[i]) for i in [8, 9]] if cstype == 3 else [
             CSys.paramdefaults[i] for i in [8, 9]]
@@ -597,8 +597,6 @@ class CommandNMAX(Command):
 
     def __call__(self, *args, **kwargs):
         args = self.fill_args(*args)
-        # if args[0] is '':
-        #     raise NoDefault(f'No default value for Label in NMAX command.')
         nmax = int_or_default(args[0], self.model.NMAX)
         self.model.NMAX = nmax
 

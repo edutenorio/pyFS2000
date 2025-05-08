@@ -152,3 +152,7 @@ class Node(ListedMixin, CalculatedMixin, FS2000Entity):
     def NODE(self):
         """Node number"""
         return self.pk
+
+    def distance_to(self, other):
+        dx, dy, dz = self.xg - other.xg, self.yg - other.yg, self.zg - other.zg
+        return np.sqrt(dx * dx + dy * dy + dz * dz)

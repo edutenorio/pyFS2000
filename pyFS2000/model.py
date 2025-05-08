@@ -158,15 +158,17 @@ class Model(CommandMixin, ListsMixin):
         """
         logger = logging.getLogger('FS2000')
         filedir, filename, fileext = self._get_filename_split(filename)
-        # Save .XYZ file path
-        self._filepath = Path(os.path.join(filedir, f'{filename}.XYZ'))
         # Load model file (.MDL)
         mdlfile = Path(os.path.join(filedir, f'{filename}.MDL'))
         if not mdlfile.is_file():
-            logger.error(f'File not found: "{mdlfile}"')
+            logger.error(f'Model file not found: "{mdlfile}"')
             raise FileNotFoundError(mdlfile)
+        # Reset model
         self.reset()
         logger.debug(f'Opening model file: "{mdlfile}"')
+        # Save .XYZ file path after reset
+        self._filepath = Path(os.path.join(filedir, f'{filename}.XYZ'))
+        # Execute mdl file lines as commands
         self.cmd(mdlfile.read_text())
         logger.info(f'Model loaded from "{mdlfile}"')
         # Read loads
@@ -175,7 +177,7 @@ class Model(CommandMixin, ListsMixin):
                   f_.upper() == filename.upper() and e_[:2].upper() == '.L' and e_[2:].isnumeric()]
         for lfile in lfiles:
             self.cmd(lfile.read_text())
-        # Read load combinations
+        # Read load combinations - to be implemented
         return self
 
     def save(self):
@@ -353,10 +355,6 @@ class Model(CommandMixin, ListsMixin):
     def FS2000Version(self, value):
         fsversion = str(value)
         self._fsversion = fsversion if 'FS2000 VERSION' in fsversion else f'FS2000 VERSION {fsversion}'
-
-    @property
-    def header(self):
-        return self.__repr__()
 
     @property
     def SystemPath(self):
@@ -586,6 +584,15 @@ class Model(CommandMixin, ListsMixin):
     def ICMAX(self, value):
         self._ic_list.pkmax = int(value)
 
+    # SCMAX = property(_get_scmax)
+    # MATMAX = property(_get_matmax)
+    # CTYPEMAX = property(_get_ctypemax)
+    # ICMAX = property(_get_icmax)
+    # RCMAX = property(_get_rcmax)
+    # RESTMAX = property(_get_restmax)
+    # PPARAMMAX = property(_get_pparammax)
+    # EOFMAX = property(_get_eofmax)
+
     # Last defined elements
     @property
     def LASTNODE(self):
@@ -610,4 +617,3 @@ class Model(CommandMixin, ListsMixin):
     @ACTLCASE.setter
     def ACTLCASE(self, value):
         self._ACTLCASE = int(value)
-

@@ -18,17 +18,10 @@ class RC(ListedMixin, FS2000Entity):
 
     def __repr__(self):
         return f'Code        1          2          3          4          5          6          7\n' \
-               f'{self._key:^4d} X {self._RCX1:>10.3E} {self._RCX2:>10.3E} {self._RCX3:>10.3E} {self._RCX4:>10.3E} ' \
+               f'{self.pk:^4d} X {self._RCX1:>10.3E} {self._RCX2:>10.3E} {self._RCX3:>10.3E} {self._RCX4:>10.3E} ' \
                f'{self._RCX5:>10.3E} {self._RCX6:>10.3E} {self._RCX7:>10.3E}\n' \
                f'     Y {self._RCY1:>10.3E} {self._RCY2:>10.3E} {self._RCY3:>10.3E} {self._RCY4:>10.3E} ' \
                f'{self._RCY5:>10.3E} {self._RCY6:>10.3E} {self._RCY7:>10.3E}'
-
-    # def __str__(self):
-    #     return f'RC,{self._key},{self._RCX1},{self._RCY1},{self._RCX2},{self._RCY2},{self._RCX3},{self._RCY3},' \
-    #            f'{self._RCX4},{self._RCY4},{self._RCX5},{self._RCY5},{self._RCX6},{self._RCY6},' \
-    #            f'{self._RCX7},{self._RCY7}'
-
-
 
     # Properties
     @property

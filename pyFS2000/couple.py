@@ -1,7 +1,4 @@
-import logging
 import numpy as np
-
-from numpy.linalg import norm
 
 from .aux_functions import calc_ijk
 from .base import ListedMixin, CalculatedMixin, FS2000Entity
@@ -42,9 +39,6 @@ class Couple(ListedMixin, CalculatedMixin, FS2000Entity):
         self._model._ACTSPCONST = self._SPCONST
         self._model._LASTSC = self
 
-
-
-    #
     # def create_sccopy(self, cmd):
     #     """
     #     Create a couple element from the command:

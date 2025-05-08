@@ -1,8 +1,7 @@
 import logging
 
 from icecream import ic
-from numpy import array, dot, cross, matmul, cos, radians, sin
-from numpy.linalg import norm, inv
+import numpy as np
 
 from .aux_functions import cylindrical_to_cartesian, spherical_to_cartesian, conical_to_cartesian
 from .aux_functions import cartesian_to_cylindrical, cartesian_to_spherical, cartesian_to_conical
@@ -46,18 +45,18 @@ class CSys(ListedMixin, CalculatedMixin, FS2000Entity):
         self._T1, self._T2, self._T3 = 0.0, 0.0, 0.0
         self._RX, self._RY, self._RZ = 0.0, 0.0, 0.0
         self._P1, self._P2, self._N3 = 0.0, 0.0, 0
-        self._o = array([0, 0, 0], dtype=float)  # System origin, in global coordinates
-        self._i = array([1, 0, 0], dtype=float)  # Canonical vector i, in global coordinates
-        self._j = array([0, 1, 0], dtype=float)  # Canonical vector j, in global coordinates
-        self._k = array([0, 0, 1], dtype=float)  # Canonical vector k, in global coordinates
-        self._Tl2g = array([[1, 0, 0, 0],
-                            [0, 1, 0, 0],
-                            [0, 0, 1, 0],
-                            [0, 0, 0, 1]], dtype=float)  # Transformation matrix local to global
-        self._Tg2l = array([[1, 0, 0, 0],
-                            [0, 1, 0, 0],
-                            [0, 0, 1, 0],
-                            [0, 0, 0, 1]], dtype=float)  # Transformation matrix global to local
+        self._o = np.array([0, 0, 0], dtype=float)  # System origin, in global coordinates
+        self._i = np.array([1, 0, 0], dtype=float)  # Canonical vector i, in global coordinates
+        self._j = np.array([0, 1, 0], dtype=float)  # Canonical vector j, in global coordinates
+        self._k = np.array([0, 0, 1], dtype=float)  # Canonical vector k, in global coordinates
+        self._Tl2g = np.array([[1, 0, 0, 0],
+                               [0, 1, 0, 0],
+                               [0, 0, 1, 0],
+                               [0, 0, 0, 1]], dtype=float)  # Transformation matrix local to global
+        self._Tg2l = np.array([[1, 0, 0, 0],
+                               [0, 1, 0, 0],
+                               [0, 0, 1, 0],
+                               [0, 0, 0, 1]], dtype=float)  # Transformation matrix global to local
         # Call base class constructor
         super().__init__(model, *args, **kwargs)
 
@@ -80,59 +79,59 @@ class CSys(ListedMixin, CalculatedMixin, FS2000Entity):
         # Set origin of the system
         if self._N3 == -1:
             # 3-node definition. These nodes should be defined in the global coordinate system
-            p0 = self._model.get_node(self._T1).xyzg
-            px = self._model.get_node(self._T2).xyzg
-            py = self._model.get_node(self._T3).xyzg
+            p0 = self._model.NodeList.get(int(self._T1)).xyzg
+            px = self._model.NodeList.get(int(self._T2)).xyzg
+            py = self._model.NodeList.get(int(self._T3)).xyzg
             self._o[0], self._o[1], self._o[2] = p0[0], p0[1], p0[2]
             # Define the canonical vector 'i'
-            self._i = (px - p0) / norm(px - p0)
+            self._i = (px - p0) / np.linalg.norm(px - p0)
             # Define the vector 'j' and make sure it is perpendicular to 'i' and unitary
-            self._j = (py - p0) / norm(py - p0)
-            self._j = self._j - dot(self._j, self._i) * self._i
-            self._j /= norm(self._j)
+            self._j = (py - p0) / np.linalg.norm(py - p0)
+            self._j = self._j - np.dot(self._j, self._i) * self._i
+            self._j /= np.linalg.norm(self._j)
             # Define vector 'k' as the cross product between 'i' and 'j'
-            self._k = cross(self._i, self._j)
+            self._k = np.cross(self._i, self._j)
             # Transformation Matrix : global to local
-            m1 = array([[1, 0, 0, -self._o[0]],
-                        [0, 1, 0, -self._o[1]],
-                        [0, 0, 1, -self._o[2]],
-                        [0, 0, 0, 1]])
-            m2 = array([[self._i[0], self._i[1], self._i[2], 0],
-                        [self._j[0], self._j[1], self._j[2], 0],
-                        [self._k[0], self._k[1], self._k[2], 0],
-                        [0, 0, 0, 1]])
-            self._Tg2l = matmul(m2, m1)
+            m1 = np.array([[1, 0, 0, -self._o[0]],
+                           [0, 1, 0, -self._o[1]],
+                           [0, 0, 1, -self._o[2]],
+                           [0, 0, 0, 1]])
+            m2 = np.array([[self._i[0], self._i[1], self._i[2], 0],
+                           [self._j[0], self._j[1], self._j[2], 0],
+                           [self._k[0], self._k[1], self._k[2], 0],
+                           [0, 0, 0, 1]])
+            self._Tg2l = np.matmul(m2, m1)
             # Transformation matrtix : local to global
-            self._Tl2g = inv(self._Tg2l)
+            self._Tl2g = np.linalg.inv(self._Tg2l)
         else:
             # Definition by XYZ-coordinates and Y-Z-X rotations
             self._o[0], self._o[1], self._o[2] = self._T1, self._T2, self._T3
-            m1 = array([[1, 0, 0, -self._o[0]],
-                        [0, 1, 0, -self._o[1]],
-                        [0, 0, 1, -self._o[2]],
-                        [0, 0, 0, 1]])
-            rx, ry, rz = radians([self._RX, self._RY, self._RZ])
-            m2 = array([[cos(ry), 0, -sin(ry), 0],
-                        [0, 1, 0, 0],
-                        [sin(ry), 0, cos(ry), 0],
-                        [0, 0, 0, 1]])
-            m3 = array([[cos(rz), sin(rz), 0, 0],
-                        [-sin(rz), cos(rz), 0, 0],
-                        [0, 0, 1, 0],
-                        [0, 0, 0, 1]])
-            m4 = array([[1, 0, 0, 0],
-                        [0, cos(rx), sin(rx), 0],
-                        [0, -sin(rx), cos(rx), 0],
-                        [0, 0, 0, 1]])
+            m1 = np.array([[1, 0, 0, -self._o[0]],
+                           [0, 1, 0, -self._o[1]],
+                           [0, 0, 1, -self._o[2]],
+                           [0, 0, 0, 1]])
+            rx, ry, rz = np.radians([self._RX, self._RY, self._RZ])
+            m2 = np.array([[np.cos(ry), 0, -np.sin(ry), 0],
+                           [0, 1, 0, 0],
+                           [np.sin(ry), 0, np.cos(ry), 0],
+                           [0, 0, 0, 1]])
+            m3 = np.array([[np.cos(rz), np.sin(rz), 0, 0],
+                           [-np.sin(rz), np.cos(rz), 0, 0],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1]])
+            m4 = np.array([[1, 0, 0, 0],
+                           [0, np.cos(rx), np.sin(rx), 0],
+                           [0, -np.sin(rx), np.cos(rx), 0],
+                           [0, 0, 0, 1]])
             # Canonical vectors
-            m_ijk = matmul(m4, matmul(m3, m2))
+            m_ijk = np.matmul(m4, np.matmul(m3, m2))
             self._i[0], self._i[1], self._i[2] = m_ijk[0][0], m_ijk[0][1], m_ijk[0][2]
             self._j[0], self._j[1], self._j[2] = m_ijk[1][0], m_ijk[1][1], m_ijk[1][2]
             self._k[0], self._k[1], self._k[2] = m_ijk[2][0], m_ijk[2][1], m_ijk[2][2]
             # Transformation Matrix : global to local
-            self._Tg2l = matmul(m_ijk, m1)
+            self._Tg2l = np.matmul(m_ijk, m1)
             # Transformation matrtix : local to global
-            self._Tl2g = inv(self._Tg2l)
+            self._Tl2g = np.linalg.inv(self._Tg2l)
         # Set calculated flag to True
         super().calculate()
 
@@ -273,7 +272,7 @@ class CSys(ListedMixin, CalculatedMixin, FS2000Entity):
         """Convert a point in local coordinates to global cartesian system."""
         self.calculate()
         # Set a vector with the point coordinates in local coordinate system
-        pl = array([point[0], point[1], point[2], 1], dtype=float)
+        pl = np.array([point[0], point[1], point[2], 1], dtype=float)
         # Converto to cartesian
         if self._TYPE == 0:
             # Cartesian (do nothing)
@@ -285,7 +284,7 @@ class CSys(ListedMixin, CalculatedMixin, FS2000Entity):
         elif self._TYPE == 3:
             pl = conical_to_cartesian(pl, self._P1, self._P2)
         # Calculate transformation in cartesian coordinates
-        pg = matmul(self._Tl2g, pl)
+        pg = np.matmul(self._Tl2g, pl)
         # Return global coordinates
         return pg[:dim]
 
@@ -298,9 +297,9 @@ class CSys(ListedMixin, CalculatedMixin, FS2000Entity):
         if not self.calculated:
             self.calculate()
         # Set a vector with the point coordinates (assumes global is always cartesian)
-        pg = array([point[0], point[1], point[2], 1], dtype=float)
+        pg = np.array([point[0], point[1], point[2], 1], dtype=float)
         # Calculate transformation in cartesian coordinates
-        pl = matmul(self._Tg2l, pg)
+        pl = np.matmul(self._Tg2l, pg)
         # Transform to system type
         if self._TYPE == 0:
             # Cartesian (do nothing)

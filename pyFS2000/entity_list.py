@@ -7,7 +7,7 @@ from .exceptions import EntityNotFound, TypeInvalid
 
 class EntityList(list):
     _lookup_operators = ['eq', 'ne', 'lt', 'gt', 'le', 'ge', 'range', 'in', 'contains', 'icontains', 'startswith',
-                         'istartswith', 'endswith', 'iendswith', 'exact', 'iexact', 'isnull', 'isnone']
+                         'istartswith', 'endswith', 'iendswith', 'exact', 'iexact', 'isnull', 'isnone', 'func']
 
     def __init__(self, entity_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -135,6 +135,10 @@ class EntityList(list):
 
     @staticmethod
     def _meet_lookup_criteria(entity, attr_list, op, lookup_value):
+        # Apply an external boolean funcion
+        if len(attr_list) == 1 and op == 'func':
+            return lookup_value(getattr_nest(entity, attr_list))
+        # Get attributes
         attr_value = getattr_nest(entity, attr_list)
         # Null filters
         if op in ['isnull', 'isnone']:
@@ -220,12 +224,14 @@ class EntityList(list):
             iexact : same as exact, but case-insensitive
             isnull : whether the attribute is null
             isnone : same as isnull, more pyhtonic
+            func : apply an external function to elements of the list
 
         e.g.
         NodeList.filter(X__lt=0, Z_lt=0) -> all nodes with X < 0 and Z < 0
         NodeList.filter(X__range=(-0.5,0.5)) -> all nodes with -0.5 <= X <= 0.5
         ElementList.filter(N1__Y__lt=0) -> All elements with first node Y < 0
         ElementList.filter(TYPE__in=[2,3]) -> All bend type elements
+        NodeList.filter(func=lambda n: n.X**2+n.Z**2 == 25) -> Nodes w/ r=5.0
         """
         return self._filter(positive=True, **kwargs)
 
