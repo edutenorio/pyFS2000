@@ -2,27 +2,15 @@ import logging
 import os
 from pathlib import Path
 from datetime import datetime
-
+from dotenv import load_dotenv
 from icecream import ic
-
-# import pandas as pd
 
 from .command import CommandMixin
 from .csys import CSys
-from .entity_list import EntityList
 from .exceptions import ParameterInvalid
 from .lists_mixin import ListsMixin
-from .node import Node
-from .element_offset import ElemOffset
-from .element import Element
-from .pparam import PParam
-from .couple import Couple
-from .geometry import Geometry
-from .material import Material
-from .ctype import CType
-from .ic import IC
-from .rc import RC
-from .rest import Rest
+
+load_dotenv()
 
 
 class Model(CommandMixin, ListsMixin):
@@ -38,9 +26,7 @@ class Model(CommandMixin, ListsMixin):
     m1 = Model(NAME='Any_Model_Name')
     m1.cmd('N,15,2.5,0,5.5')
     """
-    _systempath = Path(r'C:\Program Files (x86)\FS2000')  # Path of the FS2000 folder
-    # _descriptor_list = ['NAME', 'TITLE', 'UNIT', 'DATE', 'TIME', 'BY', 'REF', 'DESC']
-    # _command_list = []
+    _systempath = Path(os.getenv("FS2000_DIR"), r'C:\Program Files (x86)\FS2000')  # Path of the FS2000 folder
 
     def __init__(self, filename: str = None):
         """
@@ -62,19 +48,6 @@ class Model(CommandMixin, ListsMixin):
 
         # General model parameters and objects
         self._filepath = Path('')  # File path to load from and save to
-        # self._descriptors = dict(((descriptor, '') for descriptor in self._descriptor_list))
-        # self._csys_list = EntityList(CSys)
-        # self._node_list = EntityList(Node)
-        # self._element_list = EntityList(Element)
-        self._elemoffset_list = EntityList(ElemOffset)
-        self._pparam_list = EntityList(PParam)
-        self._couple_list = EntityList(Couple)
-        self._geometry_list = EntityList(Geometry)
-        self._material_list = EntityList(Material)
-        self._ctype_list = EntityList(CType)
-        self._ic_list = EntityList(IC)
-        self._rc_list = EntityList(RC)
-        self._rest_list = EntityList(Rest)
         # Other parameters
         self._ACTCSYS = 0  # Active coordinate system
         self._ACTN = 0  # Reference node
@@ -126,7 +99,6 @@ class Model(CommandMixin, ListsMixin):
                f'Add\'l Description : {self._DESC}'
 
     def __str__(self):
-        # return self._descriptors["NAME"]
         return self._NAME
 
     def _set_active_constant(self, active_constant, value):
@@ -241,6 +213,18 @@ class Model(CommandMixin, ListsMixin):
         of Units).
         """
         return self._udef == 0
+
+    @staticmethod
+    def get_active_model():
+        filename = os.path.join(Model._systempath, 'MODEL.NAM')
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f'FS2000 MODEL.NAM file not found in {Model._systempath}.')
+        f = open(filename, 'r')
+        lines = f.read().split('\n')
+        f.close()
+        if len(lines) < 3:
+            raise ValueError(f'FS2000 MODEL.NAM file in {Model._systempath} is corrupted.')
+        return {'FILE': f'{lines[0].strip()}.XYZ', 'NAME': lines[1].strip(), 'PATH': lines[2].strip()}
 
     # Model Definition
     @property
