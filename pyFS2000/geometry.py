@@ -1,5 +1,6 @@
 import logging
-
+import os
+from dotenv import load_dotenv
 import numpy as np
 from icecream import ic
 
@@ -7,6 +8,15 @@ from .aux_functions import str_or_blank
 from .base import ListedMixin, CalculatedMixin, FS2000Entity
 from .exceptions import SectionTypeInvalid
 
+load_dotenv()
+
+def find_default_libraries(section_format_keys):
+    fs2000_path = os.getenv("FS2000_DIR", r'C:\Program Files (x86)\FS2000')
+    if not os.path.exists(fs2000_path):
+        return []
+    lib_files = [f.upper() for f in os.listdir(fs2000_path) if
+                 os.path.splitext(f)[1].upper().startswith('.PR') and f[-1].upper() in section_format_keys]
+    return lib_files
 
 class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
     """Defines an FS2000 Geometry code."""
@@ -16,13 +26,14 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
                   'CORRALL', 'MILLTOL', 'CONTDEN', 'INSULT', 'INSULDEN', 'LININGT', 'LININGDEN']
     paramdefaults = [0, 0, '', '', '', 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    default_libraries = ['UB.PRI', 'UC.PRI', 'RSJ.PRI', 'PFC.PRC', 'RHS.PRB', 'SHS.PRB', 'RST.PRT', 'TUB.PRT',
-                         'TUC.PRT', 'RSA.PRA', 'EA.PRL', 'UEA.PRL', 'DEA.PRD', 'DUA.PRD', 'HEA.PRI', 'HEB.PRI',
-                         'HEM.PRI', 'IPE.PRI', 'IPN.PRI', 'WS_.PRI', 'HP_.PRI', 'MS_.PRI', 'SS_.PRI', 'CS_.PRB',
-                         'MC_.PRB', 'HS_.PRB', 'WT_.PRT', 'MT_.PRT', 'ST_.PRT', 'AA_.PRA', 'AS_.PRL', 'DE_.PRD',
-                         'DU_.PRD']
-    default_libraries_name = [x.split('.')[0] for x in default_libraries]
+    # default_libraries = ['UB.PRI', 'UC.PRI', 'RSJ.PRI', 'PFC.PRC', 'RHS.PRB', 'SHS.PRB', 'RST.PRT', 'TUB.PRT',
+    #                      'TUC.PRT', 'RSA.PRA', 'EA.PRL', 'UEA.PRL', 'DEA.PRD', 'DUA.PRD', 'HEA.PRI', 'HEB.PRI',
+    #                      'HEM.PRI', 'IPE.PRI', 'IPN.PRI', 'WS_.PRI', 'HP_.PRI', 'MS_.PRI', 'SS_.PRI', 'CS_.PRB',
+    #                      'MC_.PRB', 'HS_.PRB', 'WT_.PRT', 'MT_.PRT', 'ST_.PRT', 'AA_.PRA', 'AS_.PRL', 'DE_.PRD',
+    #                      'DU_.PRD']
     section_format_keys = ['I', 'C', 'B', 'T', 'A', 'L', 'R', 'D', '1', '2']
+    default_libraries = find_default_libraries(section_format_keys)
+    default_libraries_name = [x.split('.')[0] for x in default_libraries]
     model_libraries_name = [f'MD{x}' for x in section_format_keys]
 
     def __init__(self, model, *args, **kwargs):
@@ -659,8 +670,8 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
                     'UNIT': '"m"' if self._model.is_SI() else '"in"',
                     'OD': self._C1, 'WT': self._C2}
         filepath = None
-        if self._NAME in self.default_libraries_name:
-            filename = self.default_libraries[self.default_libraries_name.index(self._NAME)]
+        if self._NAME.strip() in self.default_libraries_name:
+            filename = self.default_libraries[self.default_libraries_name.index(self._NAME.strip())]
             filepath = self._model.SystemPath.joinpath(filename)
         elif self._NAME in self.model_libraries_name:
             filename = f'{self._model.NAME}.PR{self._NAME[2]}'
@@ -668,7 +679,7 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         if filepath is None:
             return None
         section_format = str(filepath)[-1]
-        result = {'FORMAT': section_format}
+        # result = {'FORMAT': section_format}
         if section_format not in self.section_format_keys:
             raise SectionTypeInvalid(f'Section format "{section_format}" not defined.')
         if not filepath.exists():
@@ -678,7 +689,8 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         lines = file.read().split('\n')
         file.close()
         # Read section units
-        section_unit = '"in"' if 'INCH' in lines[0] else '"mm"'
+        # section_unit = '"in"' if 'INCH' in lines[0] else '"mm"'
+        section_unit = 'in' if 'INCH' in lines[0] else 'mm'
         # Read header for properties
         headers = lines[1].split()
         # Read lines to look for the section designation
@@ -693,5 +705,7 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         if not section_found:
             logger.warning(f'Section "{self._DESIGNATION}" not found in file "{filepath.name}".')
             return None
+        # return dict(zip(['FORMAT', 'UNIT'] + headers,
+        #                 [section_format, section_unit, f'"{self._NAME} {vals[0]}"'] + [float(x) for x in vals[1:]]))
         return dict(zip(['FORMAT', 'UNIT'] + headers,
-                        [section_format, section_unit, f'"{self._NAME} {vals[0]}"'] + [float(x) for x in vals[1:]]))
+                        [section_format, section_unit, f'{self._NAME} {vals[0]}'] + [float(x) for x in vals[1:]]))
