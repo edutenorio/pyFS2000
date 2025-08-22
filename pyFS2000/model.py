@@ -2,8 +2,8 @@ import logging
 import os
 from pathlib import Path
 from datetime import datetime
-from dotenv import load_dotenv
 from icecream import ic
+from dotenv import load_dotenv
 
 from .command import CommandMixin
 from .csys import CSys
