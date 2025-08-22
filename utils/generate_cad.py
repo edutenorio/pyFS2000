@@ -21,8 +21,6 @@ m1.load(file_path)
 f = open(os.path.join("cad_script", f"{m1.NAME}.scr"), "w")
 
 def cad_RSC(section):
-    # table = pd.read_csv(os.path.join("data", "RSC.csv"), index_col="desig", dtype={"desig": str})
-    # row = table.loc[section]
     with (open(os.path.join("data", "RSC.csv"), "r") as f):
         lines = f.read().splitlines()
         headers = lines[0].split(",")
@@ -62,6 +60,37 @@ def cad_RSC(section):
               f"move\n?\nl\n\n0,0\n{-Cy},0\n")
     return result
 
+def cad_I(d, bf, tw, tf, r):
+    if np.isclose(r, 0.0):
+        pts = [
+            (tw/2, d/2-tf),
+            (bf/2, d/2-tf),
+            (bf/2, d/2),
+        ]
+        pts += [(-pt[0],  pt[1]) for pt in reversed(pts)]
+        pts += [( pt[0], -pt[1]) for pt in reversed(pts)]
+        result = f"pl\n" + "\n".join([f"{pt[0]},{pt[1]}" for pt in pts]) + f"\nc\n"
+    else:
+        c = [tw/2+r, d/2-tf-r]
+        pts = [
+            (c[0] + r*np.cos(np.pi)    , c[1] + r*np.sin(np.pi)),
+            (c[0] + r*np.cos(3*np.pi/4), c[1] + r*np.sin(3*np.pi/4)),
+            (c[0] + r*np.cos(np.pi/2)  , c[1] + r*np.sin(np.pi/2)),
+            (bf/2, d/2-tf),
+            (bf/2, d/2),
+        ]
+        pts += [(-pt[0],  pt[1]) for pt in reversed(pts)]
+        pts += [( pt[0], -pt[1]) for pt in reversed(pts)]
+        result = (f"pl\n"
+                  f"{pts[0][0]},{pts[0][1]}\na\ns\n{pts[1][0]},{pts[1][1]}\n{pts[2][0]},{pts[2][1]}\nl\n"
+                  f"{pts[3][0]},{pts[3][1]}\n{pts[4][0]},{pts[4][1]}\n"
+                  f"{pts[5][0]},{pts[5][1]}\n{pts[6][0]},{pts[6][1]}\n{pts[7][0]},{pts[7][1]}\n"
+                  f"a\ns\n{pts[8][0]},{pts[8][1]}\n{pts[9][0]},{pts[9][1]}\nl\n"
+                  f"{pts[10][0]},{pts[10][1]}\na\ns\n{pts[11][0]},{pts[11][1]}\n{pts[12][0]},{pts[12][1]}\nl\n"
+                  f"{pts[13][0]},{pts[13][1]}\n{pts[14][0]},{pts[14][1]}\n{pts[15][0]},{pts[15][1]}\n"
+                  f"{pts[16][0]},{pts[16][1]}\n{pts[17][0]},{pts[17][1]}\n"
+                  f"a\ns\n{pts[18][0]},{pts[18][1]}\n{pts[19][0]},{pts[19][1]}\nl\nc\n")
+    return result
 
 # elemList = m1.ElementList.copy().filter(MAT=4, GEOM__in=[47, 52])
 elemList = m1.ElementList.copy()
@@ -121,54 +150,20 @@ while len(elemList) > 0:
                 f.write("-purge\ng\nsect02\nn\n")
             f.write("-group\nr\nsect01\nall\n\n")
             f.write("-purge\ng\nsect01\nn\n")
-    # elif dimensions['FORMAT'] == 'B':
-    #     # Box section
-    #     ic("Generate box")
+    elif dimensions['FORMAT'] == 'B':
+        # Box section
+        ic("Generate box, to be implemented")
     elif dimensions['FORMAT'] in ['I', '2']:
         # I-Section
         d, bf, tw, tf, r = dimensions["D"], dimensions["B"], dimensions["t"], dimensions["T"], dimensions["r"]
-        if np.isclose(r, 0.0):
-            f.write(f"pl\n"
-                    f"{-bf/2},{-d/2}\n"
-                    f"{bf/2},{-d/2}\n"
-                    f"{bf/2},{-d/2+tf}\n"
-                    f"{tw/2},{-d/2+tf}\n"
-                    f"{tw/2},{d/2-tf}\n"
-                    f"{bf/2},{d/2-tf}\n"
-                    f"{bf/2},{d/2}\n"
-                    f"{-bf/2},{d/2}\n"
-                    f"{-bf/2},{d/2-tf}\n"
-                    f"{-tw/2},{d/2-tf}\n"
-                    f"{-tw/2},{-d/2+tf}\n"
-                    f"{-bf/2},{-d/2+tf}\n"
-                    f"c\n")
-        else:
-            f.write(f"pl\n"
-                    f"{-bf/2},{-d/2}\n"
-                    f"{bf/2},{-d/2}\n"
-                    f"{bf/2},{-d/2+tf}\n"
-                    f"{tw/2+r},{-d/2+tf}\n"
-                    # f"a\nce\n{tw/2+r},{-d/2+tf+r}\nl\n-{r*np.pi/4}\nl\n"
-                    f"a\ns\n{tw/2+r-r*np.cos(np.pi/4)},{-d/2+tf+r-r*np.sin(np.pi/4)}\n{tw/2},{-d/2+tf+r}\nl\n"
-                    f"{tw/2},{d/2-tf-r}\n"
-                    f"a\ns\n{tw/2+r-r*np.cos(np.pi/4)},{d/2-tf-r+r*np.sin(np.pi/4)}\n{tw/2+r},{d/2-tf}\nl\n"
-                    f"{bf/2},{d/2-tf}\n"
-                    f"{bf/2},{d/2}\n"
-                    f"{-bf/2},{d/2}\n"
-                    f"{-bf/2},{d/2-tf}\n"
-                    f"{-tw/2-r},{d/2-tf}\n"
-                    f"a\ns\n{-tw/2-r+r*np.cos(np.pi/4)},{d/2-tf-r+r*np.sin(np.pi/4)}\n{-tw/2},{d/2-tf-r}\nl\n"
-                    f"{-tw/2},{-d/2+tf+r}\n"
-                    f"a\ns\n{-tw/2-r+r*np.cos(np.pi/4)},{-d/2+tf+r-r*np.sin(np.pi/4)}\n{-tw/2-r},{-d/2+tf}\nl\n"
-                    f"{-bf/2},{-d/2+tf}\n"
-                    f"c\n")
+        f.write(cad_I(d, bf, tw, tf, r))
     elif dimensions['FORMAT'] == 'C':
         # C-Section
         if 'RSC' in dimensions["Desig"]:
             f.write(cad_RSC(dimensions["Desig"].split()[-1]))
         else:
             d, bf, tw, tf, r = dimensions["D"], dimensions["B"], dimensions["t"], dimensions["T"], dimensions["r"]
-            ic("C to be implemented")
+            ic("normal C to be implemented")
     else:
         # Return UCS to previous
         f.write("UCS\nw\n")
@@ -177,18 +172,7 @@ while len(elemList) > 0:
     f.write(f"extrude\n?\nl\n\n{length}\n")
     # Return UCS to previous
     f.write("UCS\nw\n")
-    # Rotate model so Z is vertical
 
-    # f.write(f'MODEL_UNIT=' + ('"S.I."' if m1.is_SI() else '"USA-Units"') + ', ')
-    # f.write(', '.join([f'{k}={dimensions[k]}' for k in list(dimensions.keys())[1:]]) + ', ')
-    # f.write(f'p1=[{", ".join([str(x) for x in p1])}], ')
-    # f.write(f'p2=[{", ".join([str(x) for x in p2])}], ')
-    # f.write(f'i=[{", ".join([str(x) for x in element.localX])}], ')
-    # f.write(f'j=[{", ".join([str(x) for x in element.localY])}], ')
-    # f.write(f'k=[{", ".join([str(x) for x in element.localZ])}], ')
-    # f.write(f'material="M{element.MAT.pk}", geometry="P{element.GEOM.pk}", ')
-    # f.write(f'name="E{element.pk}", ')
-    # f.write(f').create_body()\n')
-    # e0 = element
+# Rotate model so that Z is vertical
 f.write("rotate3d\nall\n\nx\n0,0,0\n90\n")
 f.close()

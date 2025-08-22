@@ -5,3 +5,5 @@ pyFS2000/__pycache__/
 __pycache__/
 .env
 *.pyc
+/utils/cad_script
+*.scr
