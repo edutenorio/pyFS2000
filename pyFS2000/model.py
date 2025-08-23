@@ -10,8 +10,7 @@ from .csys import CSys
 from .exceptions import ParameterInvalid
 from .lists_mixin import ListsMixin
 
-load_dotenv()
-
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 class Model(CommandMixin, ListsMixin):
     """
@@ -26,7 +25,7 @@ class Model(CommandMixin, ListsMixin):
     m1 = Model(NAME='Any_Model_Name')
     m1.cmd('N,15,2.5,0,5.5')
     """
-    _systempath = Path(os.getenv("FS2000_DIR"), r'C:\Program Files (x86)\FS2000')  # Path of the FS2000 folder
+    _systempath = Path(os.getenv("FS2000_DIR", r'C:\Program Files (x86)\FS2000'))  # Path of the FS2000 folder
 
     def __init__(self, filename: str = None):
         """

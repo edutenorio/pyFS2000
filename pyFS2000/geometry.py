@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import numpy as np
 from icecream import ic
@@ -8,7 +9,7 @@ from .aux_functions import str_or_blank
 from .base import ListedMixin, CalculatedMixin, FS2000Entity
 from .exceptions import SectionTypeInvalid
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 def find_default_libraries(section_format_keys):
     fs2000_path = os.getenv("FS2000_DIR", r'C:\Program Files (x86)\FS2000')
@@ -697,6 +698,8 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         vals = []
         section_found = False
         for line in lines[2:]:
+            if not line:
+                continue
             vals = line.split()
             vals[0] = vals[0] if vals[0][0] != '-' else vals[0][1:]
             if vals[0] == self._DESIGNATION.strip():

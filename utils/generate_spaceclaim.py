@@ -72,6 +72,8 @@ while len(elemList) > 0:
     elif dimensions['FORMAT'] in ['I', '2']:
         # I-Section
         f.write(f'element = SpaceClaimISection(')
+        f.write(', '.join([f'{k}=\"{dimensions[k]}\"' for k in ['Desig', 'UNIT']]) + ', ')
+        del dimensions['Desig'], dimensions['UNIT']
     elif dimensions['FORMAT'] == 'C':
         # I-Section
         f.write(f'element = SpaceClaimChannel(')

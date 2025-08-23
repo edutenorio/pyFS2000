@@ -10,6 +10,8 @@ from pyFS2000 import Model
 active_model = Model.get_active_model()
 if not active_model:
     exit(1)
+if not os.path.exists(active_model['FILE']):
+    active_model['PATH'] = '.'
 file_path = filedialog.askopenfilename(defaultextension='XYZ',
                                        filetypes=[('FS2000 Model', '*.XYZ'), ('All files', '*.*')],
                                        initialdir=active_model['PATH'])
