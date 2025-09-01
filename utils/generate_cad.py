@@ -1,3 +1,4 @@
+import logging
 from tkinter import filedialog
 from icecream import ic
 import os
@@ -5,7 +6,9 @@ import numpy as np
 from operator import itemgetter
 # import pandas as pd
 
-from pyFS2000 import Model
+from pyFS2000 import Model, set_logger
+
+set_logger(logger_name='FS2000', level=logging.DEBUG, log_file='generate_cad.log')
 
 active_model = Model.get_active_model()
 if not active_model:
@@ -167,6 +170,7 @@ while len(elemList) > 0:
             d, bf, tw, tf, r = dimensions["D"], dimensions["B"], dimensions["t"], dimensions["T"], dimensions["r"]
             ic("normal C to be implemented")
     else:
+        ic(f"Unknown section format: {dimensions['FORMAT']}")
         # Return UCS to previous
         f.write("UCS\nw\n")
         continue

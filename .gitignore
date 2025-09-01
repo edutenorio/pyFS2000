@@ -8,3 +8,4 @@ __pycache__/
 *.scr
 /data/
 /pyFS2000/.env
+*.log

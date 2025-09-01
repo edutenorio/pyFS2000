@@ -3,6 +3,7 @@ Auxiliary functions to be used internally by the pyFS2000 package
 """
 import numpy as np
 from scipy.spatial.transform import Rotation
+import logging
 
 
 # def try_int(value, default=0) -> int:
@@ -36,6 +37,23 @@ from scipy.spatial.transform import Rotation
 #         return param_type(value)
 #     except (ValueError, TypeError):
 #         return param_type(default)
+
+def set_logger(logger_name='FS2000', level=logging.WARNING, fmt='%(asctime)s - %(levelname)s - %(message)s',
+               stream=True, log_file=None):
+    logger = logging.getLogger(logger_name)
+    logger.handlers.clear()
+    if stream:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter(fmt))
+        logger.addHandler(stream_handler)
+    if (log_file is not None) and (log_file != ''):
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(logging.Formatter(fmt))
+        logger.addHandler(file_handler)
+    logger.setLevel(level)
+    logger.propagate = False
+# set_logger("FS2000", level=logging.DEBUG if DEBUG else logging.INFO, log_file="pyFS2000.log")
+# logger = logging.getLogger("SYNC")
 
 
 def int_or_default(value: str, default=0) -> int:

@@ -11,3 +11,4 @@ from .ctype import CType
 from .ic import IC
 from .rc import RC
 from .rest import Rest
+from .aux_functions import set_logger

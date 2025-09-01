@@ -1280,8 +1280,8 @@ class CommandLCASE(Command):
         new_lcase.set_pk(lcasenum)
         new_lcase.commit()
         self.model.ACTLCASE = lcasenum
-        logger = logging.getLogger('FS2000')
-        logger.debug(f'Reading load case {lcasenum}')
+        # logger = logging.getLogger('FS2000')
+        # logger.debug(f'Reading load case {lcasenum}')
 
 
 class CommandLDESC(Command):

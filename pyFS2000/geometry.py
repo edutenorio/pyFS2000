@@ -678,10 +678,12 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
             filename = f'{self._model.NAME}.PR{self._NAME[2]}'
             filepath = self._model.ModelDir.joinpath(filename)
         if filepath is None:
+            logger.warning(f'Section library for "{self._NAME}" not found.')
             return None
         section_format = str(filepath)[-1]
         # result = {'FORMAT': section_format}
         if section_format not in self.section_format_keys:
+            logger.error(f'Section format "{section_format}" not defined.')
             raise SectionTypeInvalid(f'Section format "{section_format}" not defined.')
         if not filepath.exists():
             logger.warning(f'Section file "{filepath.name}" not found.')
@@ -690,8 +692,8 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         lines = file.read().split('\n')
         file.close()
         # Read section units
-        # section_unit = '"in"' if 'INCH' in lines[0] else '"mm"'
-        section_unit = 'in' if 'INCH' in lines[0] else 'mm'
+        # section_unit = '"in"' if 'INCH' in lines[0].upper() else '"mm"'
+        section_unit = 'in' if 'INCH' in lines[0].upper() else 'mm'
         # Read header for properties
         headers = lines[1].split()
         # Read lines to look for the section designation
