@@ -668,7 +668,7 @@ class Geometry(ListedMixin, CalculatedMixin, FS2000Entity):
         # NAME can be 'PIP' for pipe, 'USD' for user defined or one of the default or model defined list
         if self._NAME == 'PIP':
             return {'FORMAT': 'P',
-                    'UNIT': '"m"' if self._model.is_SI() else '"in"',
+                    'UNIT': 'm' if self._model.is_SI() else 'in',
                     'OD': self._C1, 'WT': self._C2}
         filepath = None
         if self._NAME.strip() in self.default_libraries_name:
