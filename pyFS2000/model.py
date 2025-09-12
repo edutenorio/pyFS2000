@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from pathlib import Path
 from datetime import datetime
 from icecream import ic
@@ -151,6 +152,14 @@ class Model(CommandMixin, ListsMixin):
         # Read load combinations - to be implemented
         return self
 
+    def load_active(self):
+        """
+        Load the current active FS2000 model from the MODEL.NAM file in the
+        FS2000 system folder.
+        """
+        active_model = Model.get_active_model()
+        return self.load(os.path.join(active_model['PATH'], active_model['FILE'] + '.XYZ'))
+
     def save(self):
         """
         Save the model to disk. Current directory and descriptor NAME will be
@@ -223,7 +232,19 @@ class Model(CommandMixin, ListsMixin):
         f.close()
         if len(lines) < 3:
             raise ValueError(f'FS2000 MODEL.NAM file in {Model._systempath} is corrupted.')
-        return {'FILE': f'{lines[0].strip()}.XYZ', 'NAME': lines[1].strip(), 'PATH': lines[2].strip()}
+        return {'FILE': f'{lines[0].strip()}', 'NAME': lines[1].strip(), 'PATH': lines[2].strip()}
+
+    @staticmethod
+    def get_active_batch():
+        filename = os.path.join(Model._systempath, 'BATCH.NAM')
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f'FS2000 BATCH.NAM file not found in {Model._systempath}.')
+        f = open(filename, 'r')
+        lines = f.read().split('\n')
+        f.close()
+        if len(lines) < 3:
+            raise ValueError(f'FS2000 BATCH.NAM file in {Model._systempath} is corrupted.')
+        return {'FILE': f'{lines[0].strip()}', 'NAME': lines[1].strip(), 'PATH': lines[2].strip()}
 
     # Model Definition
     @property
@@ -600,3 +621,69 @@ class Model(CommandMixin, ListsMixin):
     @ACTLCASE.setter
     def ACTLCASE(self, value):
         self._ACTLCASE = int(value)
+
+    @property
+    def ActiveBatch(self):
+        """Active batch file"""
+        logger = logging.getLogger('FS2000')
+        active_model = self.get_active_model()
+        active_batch = self.get_active_batch()
+        if ((active_model['FILE'].upper() != active_batch['FILE'].upper()) or
+                (active_model['NAME'].upper() != active_batch['NAME'].upper()) or
+                (active_model['PATH'].upper() != active_batch['PATH'].upper())):
+            logger.info('Active model in MODEL.NAM and BATCH.NAM do not match. Updating BATCH.NAM to match MODEL.NAM.')
+            with open(os.path.join(self._systempath, 'BATCH.NAM'), 'w') as f:
+                f.write(f'{active_model["FILE"]}\n{active_model["NAME"]}\n{active_model["PATH"]}\n\n\n\n')
+                f.close()
+        filedir, filename, fileext = self._get_filename_split()
+        fullpath = os.path.join(filedir, f'{filename}.XBT')
+        if not os.path.exists(fullpath):
+            logger.error('Active batch file not defined. Could not find MODEL.XBT file.')
+            raise ValueError('Active batch file not defined. Could not find MODEL.XBT file.')
+        with open(os.path.join(filedir, f'{filename}.XBT'), 'r') as f:
+            batch_ext = f.read().split('\n')[0].strip()
+            f.close()
+        return batch_ext
+
+    @ActiveBatch.setter
+    def ActiveBatch(self, value: str):
+        value = str(value).upper()
+        logger = logging.getLogger('FS2000')
+        if not value.startswith('BR'):
+            logger.warning('Batch file should start with "BR" to be archived by FS2000.')
+        # Set the FS2000 model active batch file
+        filedir, filename, fileext = self._get_filename_split()
+        with open(os.path.join(filedir, f'{filename}.XBT'), 'w') as f:
+            f.write(f'{value}\n')
+            f.close()
+        logger.debug(f'Active batch file set to "{value}" in model file "{filename}.XBT"')
+
+    def run_batch(self, commands: str = None):
+        temp_filename, curbatch = '', ''
+        filedir, filename, fileext = self._get_filename_split()
+        logger = logging.getLogger('FS2000')
+        if commands:
+            # Create a temporary batch file with the commands
+            temp_fileext = f'BR-{uuid.uuid4()}'
+            temp_filename = os.path.join(filedir, f'{filename}.{temp_fileext}')
+            with open(temp_filename, 'w') as f:
+                f.write(commands)
+                f.close()
+            logger.debug(f'Temporary batch file created: "{temp_fileext}"')
+            curbatch = self.ActiveBatch
+            self.ActiveBatch = temp_fileext
+        # Run the active batch file
+        curdir = os.path.abspath(os.curdir)
+        os.chdir(os.path.join(self._systempath, 'System'))
+        logger.debug('Starting batch run')
+        os.system('BATCH RUN')
+        logger.debug('Batch run completed')
+        os.chdir(curdir)
+        # Restore the original batch file and delete the temporary
+        if commands:
+            # Delete the temporary batch file
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+            # Restore the previous active batch file
+            self.ActiveBatch = curbatch
+            logger.debug(f'Temporary batch file deleted and previous active batch "{curbatch}" restored.')
