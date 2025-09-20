@@ -1,4 +1,5 @@
 from .load_cases import LoadCase
+from .load_combinations import LoadCombination
 from .rest import Rest
 from .ic import IC
 from .rc import RC
@@ -29,6 +30,7 @@ class ListsMixin:
         self._rc_list = EntityList(RC)
         self._rest_list = EntityList(Rest)
         self._loadcase_list = EntityList(LoadCase)
+        self._loadcombination_list = EntityList(LoadCombination)
         super().__init__(*args, **kwargs)
 
     @property
@@ -95,3 +97,8 @@ class ListsMixin:
     def LoadCaseList(self):
         """List of load cases"""
         return self._loadcase_list
+
+    @property
+    def LoadCombinationList(self):
+        """List of load combinations"""
+        return self._loadcombination_list

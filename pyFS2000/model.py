@@ -10,6 +10,7 @@ from .command import CommandMixin
 from .csys import CSys
 from .exceptions import ParameterInvalid
 from .lists_mixin import ListsMixin
+from .load_combinations import LoadCombination
 
 load_dotenv(Path(__file__).resolve().parent / '.env')
 
@@ -80,6 +81,7 @@ class Model(CommandMixin, ListsMixin):
         self._LASTELEM = None  # Last element defined
         self._LASTSC = None  # Last couple element defined
         self._ACTLCASE = None  # Active load case
+        self._ACTLCOMB = None # Active load combination
         # Default Coordinate Systems
         CSys(self, pk=0, TYPE=0).commit()
         CSys(self, pk=1, TYPE=1).commit()
@@ -149,7 +151,14 @@ class Model(CommandMixin, ListsMixin):
                   f_.upper() == filename.upper() and e_[:2].upper() == '.L' and e_[2:].isnumeric()]
         for lfile in lfiles:
             self.cmd(lfile.read_text())
-        # Read load combinations - to be implemented
+        # Read load combinations
+        lcombfiles = [Path(os.path.join(filedir, f'{f_}{e_}')) for f_, e_ in
+                  [os.path.splitext(f) for f in os.listdir(filedir)] if
+                  f_.upper() == filename.upper() and e_[:2].upper() == '.C' and e_[2:].isnumeric()]
+        for lcombfile in lcombfiles:
+            new_lcomb = LoadCombination(self)
+            new_lcomb.read_from_file(lcombfile)
+            new_lcomb.commit()
         return self
 
     def load_active(self):

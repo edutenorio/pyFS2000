@@ -1333,6 +1333,7 @@ class CommandACCEL(Command):
         lcase = self.model.LoadCaseList.get(self.model.ACTLCASE)
         gx, gy, gz = float_or_default(args[0], 0.0), float_or_default(args[1], 0.0), float_or_default(args[2], 0.0)
         new_load = LoadAccel(self.model, lcase, GX=gx, GY=gy, GZ=gz)
+        new_load.commit()
 
 
 class CommandNF(Command):
@@ -1356,6 +1357,7 @@ class CommandNF(Command):
         fx, fy, fz = float_or_default(args[1], 0.0), float_or_default(args[2], 0.0), float_or_default(args[3], 0.0)
         mx, my, mz = float_or_default(args[4], 0.0), float_or_default(args[5], 0.0), float_or_default(args[6], 0.0)
         new_load = LoadNF(self.model, lcase, NODE=node, FX=fx, FY=fy, FZ=fz, MX=mx, MY=my, MZ=mz)
+        new_load.commit()
 
 
 class CommandUDL(Command):
@@ -1382,6 +1384,7 @@ class CommandUDL(Command):
         udx, udy, udz = float_or_default(args[1], 0.0), float_or_default(args[2], 0.0), float_or_default(args[3], 0.0)
         coord = int_or_default(args[4], 1)
         new_load = LoadUDL(self.model, lcase, ELEM=elem, UDX=udx, UDY=udy, UDZ=udz, COORD=coord)
+        new_load.commit()
 
 
 class CommandPUDL(Command):
@@ -1409,3 +1412,4 @@ class CommandPUDL(Command):
             raise NoDefault('Geometry Code undefined in PUDL command')
         dir_, load, coord = int_or_default(args[1], 1), float_or_default(args[2], 0.0), int_or_default(args[3], 1)
         new_load = LoadPUDL(self.model, lcase, CODE=code, DIR=dir_, LOAD=load, COORD=coord)
+        new_load.commit()

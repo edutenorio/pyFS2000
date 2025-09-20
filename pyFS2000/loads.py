@@ -4,58 +4,22 @@ import numpy as np
 from icecream import ic
 
 from .base import CalculatedMixin, FS2000Entity
+from .load_base import LoadCalcMixin
 from .exceptions import ParameterInvalid
 
 
-class Load(CalculatedMixin, FS2000Entity):
+class Load(LoadCalcMixin, FS2000Entity):
     def __init__(self, model, loadcase, *args, **kwargs):
         self._loadcase = loadcase
-        self._fres, self._mres = np.zeros(3), np.zeros(3)
-        self._fx_cent, self._fy_cent, self._fz_cent = np.zeros(3), np.zeros(3), np.zeros(3)
         super().__init__(model, *args, **kwargs)
-        self._loadcase.LoadList.append(self)
-        self._loadcase._calculated = False
 
     def __repr__(self):
         return self.__str__()
 
-    def sum(self):
-        """Load resultant dictionary with centroids"""
-        self.calculate()
-        result = {
-            'fx': self._fres[0], 'fy': self._fres[1], 'fz': self._fres[2],
-            'fx_x': self._fx_cent[0], 'fx_y': self._fx_cent[1], 'fx_z': self._fx_cent[2],
-            'fy_x': self._fy_cent[0], 'fy_y': self._fy_cent[1], 'fy_z': self._fy_cent[2],
-            'fz_x': self._fz_cent[0], 'fz_y': self._fz_cent[1], 'fz_z': self._fz_cent[2],
-        }
-        return result
+    def commit(self):
+        self._loadcase.LoadList.append(self)
+        self._loadcase._calculated = False
 
-    @property
-    def fres(self):
-        """Resultant force in global coordinate system"""
-        self.calculate()
-        return self._fres
-
-    @property
-    def mres(self):
-        """Resultant moment at origin in global coordinate system"""
-        self.calculate()
-        return self._mres
-
-    @property
-    def fx_cent(self):
-        """Centroid of resultant of x-direction force"""
-        return self._fx_cent
-
-    @property
-    def fy_cent(self):
-        """Centroid of resultant of y-direction force"""
-        return self._fy_cent
-
-    @property
-    def fz_cent(self):
-        """Centroid of resultant of z-direction force"""
-        return self._fz_cent
 
 
 class LoadAccel(Load):
@@ -70,28 +34,15 @@ class LoadAccel(Load):
     def calculate(self):
         if self._calculated:
             return
-        self._fres, self._mres = np.zeros(3), np.zeros(3)
-        self._fx_cent, self._fy_cent, self._fz_cent = np.zeros(3), np.zeros(3), np.zeros(3)
-        accel = np.array([self._GX, self._GY, self._GZ])
+        load_list = []
         for element in self._model.ElementList:
-            mass = element.length * element.GEOM.ax * element.MAT.DENS
+            mass_per_length = element.GEOM.ax * element.MAT.DENS
             if element.GEOM.has_pipeprops:
-                mass += element.length * (element.GEOM.insul_mass + element.GEOM.lining_mass + element.GEOM.cont_mass)
-            f = mass * accel
-            c = element.cog
-            m = np.array([-f[1] * c[2] + f[2] * c[1], f[0] * c[2] - f[2] * c[0], -f[0] * c[1] + f[1] * c[0]])
-            # Update totals
-            self._fres += f
-            self._mres += m
-            self._fx_cent += f[0] * element.cog
-            self._fy_cent += f[1] * element.cog
-            self._fz_cent += f[2] * element.cog
-        # Calculate centre of force
-        self._fx_cent = self._fx_cent / self._fres[0] if not np.isclose(self._fres[0], 0.0) else np.zeros(3)
-        self._fy_cent = self._fy_cent / self._fres[1] if not np.isclose(self._fres[1], 0.0) else np.zeros(3)
-        self._fz_cent = self._fz_cent / self._fres[2] if not np.isclose(self._fres[2], 0.0) else np.zeros(3)
-        # Update flag
-        super().calculate()
+                mass_per_length += element.GEOM.insul_mass + element.GEOM.lining_mass + element.GEOM.cont_mass
+            udl = LoadUDL(self._model, self._loadcase, ELEM=element.pk, COORD=1)
+            udl.UDX, udl.UDY, udl.UDZ = mass_per_length * np.array([self._GX, self._GY, self._GZ])
+            load_list.append(udl)
+        self.calculate_from_list(load_list)
 
     @property
     def GX(self):
@@ -101,6 +52,7 @@ class LoadAccel(Load):
     @GX.setter
     def GX(self, value):
         self._GX = float(value)
+        self._calculated = False
 
     @property
     def GY(self):
@@ -110,6 +62,7 @@ class LoadAccel(Load):
     @GY.setter
     def GY(self, value):
         self._GY = float(value)
+        self._calculated = False
 
     @property
     def GZ(self):
@@ -119,6 +72,7 @@ class LoadAccel(Load):
     @GZ.setter
     def GZ(self, value):
         self._GZ = float(value)
+        self._calculated = False
 
 
 class LoadND(Load):
@@ -138,6 +92,7 @@ class LoadND(Load):
     @TX.setter
     def TX(self, value):
         self._TX = float(value)
+        self._calculated = False
 
     @property
     def TY(self):
@@ -147,6 +102,7 @@ class LoadND(Load):
     @TY.setter
     def TY(self, value):
         self._TY = float(value)
+        self._calculated = False
 
     @property
     def TZ(self):
@@ -156,6 +112,7 @@ class LoadND(Load):
     @TZ.setter
     def TZ(self, value):
         self._TZ = float(value)
+        self._calculated = False
 
     @property
     def RX(self):
@@ -165,6 +122,7 @@ class LoadND(Load):
     @RX.setter
     def RX(self, value):
         self._RX = float(value)
+        self._calculated = False
 
     @property
     def RY(self):
@@ -174,6 +132,7 @@ class LoadND(Load):
     @RY.setter
     def RY(self, value):
         self._RY = float(value)
+        self._calculated = False
 
     @property
     def RZ(self):
@@ -183,6 +142,7 @@ class LoadND(Load):
     @RZ.setter
     def RZ(self, value):
         self._RZ = float(value)
+        self._calculated = False
 
 
 class LoadNF(Load):
@@ -201,7 +161,7 @@ class LoadNF(Load):
         fx, fy, fz, mx, my, mz = self._FX, self._FY, self._FZ, self._MX, self._MY, self._MZ
         x, y, z = self.model.NodeList.get(self._NODE).xyzg
         self._fres = np.array([fx, fy, fz], dtype=float)
-        self._mres = np.array([mx - fy * z + fz * y, my + fx * z - fz * x, mz - fx * y + fy * z], dtype=float)
+        self._mres = np.array([mx, my, mz]) + LoadCalcMixin.global_moment([fx, fy, fx], [x, y, z])
         self._fx_cent = np.array([x, y, z], dtype=float)
         self._fy_cent = np.array([x, y, z], dtype=float)
         self._fz_cent = np.array([x, y, z], dtype=float)
@@ -216,6 +176,7 @@ class LoadNF(Load):
     @NODE.setter
     def NODE(self, value):
         self._NODE = int(value)
+        self._calculated = False
 
     @property
     def FX(self):
@@ -225,6 +186,7 @@ class LoadNF(Load):
     @FX.setter
     def FX(self, value):
         self._FX = float(value)
+        self._calculated = False
 
     @property
     def FY(self):
@@ -234,6 +196,7 @@ class LoadNF(Load):
     @FY.setter
     def FY(self, value):
         self._FY = float(value)
+        self._calculated = False
 
     @property
     def FZ(self):
@@ -243,6 +206,7 @@ class LoadNF(Load):
     @FZ.setter
     def FZ(self, value):
         self._FZ = float(value)
+        self._calculated = False
 
     @property
     def MX(self):
@@ -252,6 +216,7 @@ class LoadNF(Load):
     @MX.setter
     def MX(self, value):
         self._MX = float(value)
+        self._calculated = False
 
     @property
     def MY(self):
@@ -261,6 +226,7 @@ class LoadNF(Load):
     @MY.setter
     def MY(self, value):
         self._MY = float(value)
+        self._calculated = False
 
     @property
     def MZ(self):
@@ -270,6 +236,7 @@ class LoadNF(Load):
     @MZ.setter
     def MZ(self, value):
         self._MZ = float(value)
+        self._calculated = False
 
     @property
     def NMASS(self):
@@ -279,6 +246,7 @@ class LoadNF(Load):
     @NMASS.setter
     def NMASS(self, value):
         self._NMASS = float(value)
+        self._calculated = False
 
 
 class LoadUDL(Load):
@@ -309,7 +277,7 @@ class LoadUDL(Load):
             return
         x, y, z = element.cog
         self._fres = np.array([fx, fy, fz], dtype=float)
-        self._mres = np.array([-fy * z + fz * y, fx * z - fz * x, -fx * y + fy * z], dtype=float)
+        self._mres = LoadCalcMixin.global_moment([fx, fy, fz], [x, y, z])
         self._fx_cent = np.array([x, y, z], dtype=float)
         self._fy_cent = np.array([x, y, z], dtype=float)
         self._fz_cent = np.array([x, y, z], dtype=float)
@@ -324,6 +292,7 @@ class LoadUDL(Load):
     @ELEM.setter
     def ELEM(self, value):
         self._ELEM = int(value)
+        self._calculated = False
 
     @property
     def UDX(self):
@@ -333,6 +302,7 @@ class LoadUDL(Load):
     @UDX.setter
     def UDX(self, value):
         self._UDX = float(value)
+        self._calculated = False
 
     @property
     def UDY(self):
@@ -342,6 +312,7 @@ class LoadUDL(Load):
     @UDY.setter
     def UDY(self, value):
         self._UDY = float(value)
+        self._calculated = False
 
     @property
     def UDZ(self):
@@ -351,6 +322,7 @@ class LoadUDL(Load):
     @UDZ.setter
     def UDZ(self, value):
         self._UDZ = float(value)
+        self._calculated = False
 
     @property
     def COORD(self):
@@ -363,10 +335,11 @@ class LoadUDL(Load):
             raise ParameterInvalid(f'UDL coordinate system {int(value)} invalid. '
                                    f'It should be 1 for global or 3 for projected global')
         self._COORD = int(value)
+        self._calculated = False
 
 
 class LoadPUDL(Load):
-    type = 'UDL'
+    type = 'PUDL'
     parameters = ['CODE', 'DIR', 'LOAD', 'COORD']
     paramdefaults = [0, 1, 0.0, 1]
 
@@ -377,27 +350,21 @@ class LoadPUDL(Load):
     def calculate(self):
         if self._calculated:
             return
-        self._fres, self._mres = np.zeros(3), np.zeros(3)
-        self._fx_cent, self._fy_cent, self._fz_cent = np.zeros(3), np.zeros(3), np.zeros(3)
+        # Create a UDL load list from all elements with the specified geometric property
+        load_list = []
         for element in self._model.ElementList.filter(GEOM=self._CODE):
-            f = np.zeros(3)
+            load = LoadUDL(self._model, self._loadcase, ELEM=element.pk, COORD=self._COORD)
             if self._COORD == 1:
-                f[self._DIR - 1] = self._LOAD * element.length
+                load.UDX = self._LOAD if self._DIR == 1 else 0.0
+                load.UDY = self._LOAD if self._DIR == 2 else 0.0
+                load.UDZ = self._LOAD if self._DIR == 3 else 0.0
             elif self._COORD == 3:
                 projection = [element.localX, element.localY, element.localZ][self._DIR - 1][self._DIR - 1]
-                f[self._DIR - 1] = self._LOAD * element.length * projection
-            c = element.cog
-            m = np.array([-f[1] * c[2] + f[2] * c[1], f[0] * c[2] - f[2] * c[0], -f[0] * c[1] + f[1] * c[0]])
-            # Update totals
-            self._fres += f
-            self._mres += m
-            self._fx_cent += f[0] * element.cog
-            self._fy_cent += f[1] * element.cog
-            self._fz_cent += f[2] * element.cog
-        # Calculate centre of force
-        self._fx_cent = self._fx_cent / self._fres[0] if not np.isclose(self._fres[0], 0.0) else np.zeros(3)
-        self._fy_cent = self._fy_cent / self._fres[1] if not np.isclose(self._fres[1], 0.0) else np.zeros(3)
-        self._fz_cent = self._fz_cent / self._fres[2] if not np.isclose(self._fres[2], 0.0) else np.zeros(3)
+                load.UDX = self._LOAD * projection if self._DIR == 1 else 0.0
+                load.UDY = self._LOAD * projection if self._DIR == 2 else 0.0
+                load.UDZ = self._LOAD * projection if self._DIR == 3 else 0.0
+            load_list.append(load)
+        self.calculate_from_list(load_list)
         # Update flag
         super().calculate()
 
@@ -409,6 +376,7 @@ class LoadPUDL(Load):
     @CODE.setter
     def CODE(self, value):
         self._CODE = int(value)
+        self._calculated = False
 
     @property
     def DIR(self):
@@ -420,6 +388,7 @@ class LoadPUDL(Load):
         if int(value) not in [1, 2, 3]:
             raise ParameterInvalid(f'Invalid direction {int(value)}. It should be 1 for X, 2 for Y or 3 for Z')
         self._DIR = int(value)
+        self._calculated = False
 
     @property
     def LOAD(self):
@@ -429,6 +398,7 @@ class LoadPUDL(Load):
     @LOAD.setter
     def LOAD(self, value):
         self._LOAD = float(value)
+        self._calculated = False
 
     @property
     def COORD(self):
@@ -440,3 +410,4 @@ class LoadPUDL(Load):
         if int(value) not in [1, 3]:
             raise ParameterInvalid('Invalid corrdinate system. It should be 1 for Global or 2 for Projected Global')
         self._COORD = int(value)
+        self._calculated = False
